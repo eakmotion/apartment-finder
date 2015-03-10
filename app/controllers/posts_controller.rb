@@ -7,7 +7,15 @@ class PostsController < ApplicationController
   # GET /posts
   # GET /posts.json
   def index
-    @posts = Post.all.paginate(:page => params[:page], :per_page => 20)
+    @posts = Post.order("timestamp DESC").paginate(:page => params[:page], :per_page => 10)
+    @posts = @posts.where(bedrooms: params["bedrooms"]) if params["bedrooms"].present?
+    @posts = @posts.where(bathrooms: params["bathrooms"]) if params["bathrooms"].present?
+    @posts = @posts.where(neighborhood: params["neighborhood"]) if params["neighborhood"].present?
+    @posts = @posts.where("price > ?", params["min_price"]) if params["min_price"].present?
+    @posts = @posts.where("price < ?", params["max_price"]) if params["max_price"].present?
+    @posts = @posts.where("sqft > ?", params["min_sqft"]) if params["min_sqft"].present?
+    @posts = @posts.where("sqft < ?", params["max_sqft"]) if params["max_sqft"].present?
+    @posts = @posts.where(parking: params["parking"]) if params["parking"].present?
   end
 
   # GET /posts/1

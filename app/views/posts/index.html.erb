@@ -1,7 +1,8 @@
 <div class="container">
   <p id="notice"><%= notice %></p>
+  <%= render 'filter' %>
 
-  <h1>Listing Posts</h1>
+  <h1>Latest Posts</h1>
 
   <table class="table table-hover table-condensed">
     <thead>
@@ -41,6 +42,4 @@
 
   <br>
   <%= will_paginate @posts, renderer: BootstrapPagination::Rails %>
-
-  <%= link_to 'New Post', new_post_path %>
 </div>
