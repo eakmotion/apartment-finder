@@ -16,7 +16,7 @@ namespace :scraper do
       category_group: "RRRR",
       category: "RHFR",
       'location.city' => "USA-NYM-NEY",
-      retvals: "location,external_url,heading,body,timestamp,price"
+      retvals: "location,external_url,heading,body,timestamp,price,images,annotations"
     }
 
     # Prepare API request
@@ -35,8 +35,20 @@ namespace :scraper do
       @post.neighborhood = posting["location"]["locality"]
       @post.external_url = posting["external_url"]
       @post.timestamp = posting["timestamp"]
+      @post.bedrooms = posting["annotations"]["bedrooms"] if posting["annotations"]["bedrooms"].present?
+      @post.bathrooms = posting["annotations"]["bathrooms"] if posting["annotations"]["bathrooms"].present?
+      @post.sqft = posting["annotations"]["sqft"] if posting["annotations"]["sqft"].present?
+      @post.parking = posting["annotations"]["street_parking"] if posting["annotations"]["street_parking"].present?
       # Save Post
       @post.save
+
+      # Loop over images
+      posting["images"].each do |image|
+        @image = Image.new
+        @image.url = image["full"]
+        @image.post_id = @post.id 
+        @image.save
+      end 
     end
   end
 
