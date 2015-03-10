@@ -52,6 +52,38 @@ namespace :scraper do
     end
   end
 
+  desc "Save neighborhood short name"
+  task scrape_neighborhoods: :environment do
+    require 'open-uri'
+    require 'json'
+
+    # Set API token and URL
+    auth_token = "caee576a0ddc5613c14a8ccd7c96c5e0"
+    location_url = "http://reference.3taps.com/locations"
+
+    # Specify request parameters
+    params = {
+     auth_token: auth_token,
+     level: "locality",
+     city: "USA-NYM-NEY"
+    }
+
+    # Prepare API request
+    uri = URI.parse(location_url)
+    uri.query = URI.encode_www_form(params)
+
+    # Submit request
+    result = JSON.parse(open(uri).read)
+
+    # Store results in database
+    result["locations"].each do |location|
+      @location = Location.new
+      @location.code = location["code"]
+      @location.name = location["short_name"]
+      @location.save
+    end
+  end
+
   desc "Destroy all posts"
   task destroy_all_posts: :environment do
     Post.all.each do |post|
