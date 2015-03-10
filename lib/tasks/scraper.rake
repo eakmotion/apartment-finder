@@ -1,7 +1,7 @@
 namespace :scraper do
-  desc "TODO"
+  desc "Fetch Craigslist posts via 3taps API"
   task scrape: :environment do
-        require 'open-uri'
+    require 'open-uri'
     require 'JSON'
 
     # set API token and URL
@@ -40,8 +40,11 @@ namespace :scraper do
     end
   end
 
-  desc "TODO"
+  desc "Destroy all posts"
   task destroy_all_posts: :environment do
+    Post.all.each do |post|
+      post.destroy
+    end
   end
 
 end

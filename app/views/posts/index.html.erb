@@ -42,6 +42,7 @@
   </table>
 
   <br>
+  <%= will_paginate @posts, renderer: BootstrapPagination::Rails %>
 
   <%= link_to 'New Post', new_post_path %>
 </div>
