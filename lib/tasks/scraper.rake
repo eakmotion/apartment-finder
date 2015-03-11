@@ -8,47 +8,54 @@ namespace :scraper do
     auth_token = "caee576a0ddc5613c14a8ccd7c96c5e0"
     polling_url = "http://polling.3taps.com/poll"
 
-    # Specify request parameters
-    params = {
-      auth_token: auth_token,
-      anchor: 1906178340,
-      source: "CRAIG",
-      category_group: "RRRR",
-      category: "RHFR",
-      'location.city' => "USA-NYM-NEY",
-      retvals: "location,external_url,heading,body,timestamp,price,images,annotations"
-    }
+    # Grab data until up-to-date
+    loop do
 
-    # Prepare API request
-    uri = URI.parse(polling_url)
-    uri.query = URI.encode_www_form(params)
+      # Specify request parameters
+      params = {
+        auth_token: auth_token,
+        anchor: Anchor.first.value,
+        source: "CRAIG",
+        category_group: "RRRR",
+        category: "RHFR",
+        'location.city' => "USA-NYM-NEY",
+        retvals: "location,external_url,heading,body,timestamp,price,images,annotations"
+      }
 
-    # Submit request
-    result = JSON.parse(open(uri).read)
+      # Prepare API request
+      uri = URI.parse(polling_url)
+      uri.query = URI.encode_www_form(params)
 
-    result["postings"].each do |posting|
-      # Create new Post
-      @post = Post.new
-      @post.heading = posting["heading"]
-      @post.body = posting["body"]
-      @post.price = posting["price"]
-      @post.neighborhood = Location.find_by(code: posting["location"]["locality"]).try(:name)
-      @post.external_url = posting["external_url"]
-      @post.timestamp = posting["timestamp"]
-      @post.bedrooms = posting["annotations"]["bedrooms"] if posting["annotations"]["bedrooms"].present?
-      @post.bathrooms = posting["annotations"]["bathrooms"] if posting["annotations"]["bathrooms"].present?
-      @post.sqft = posting["annotations"]["sqft"] if posting["annotations"]["sqft"].present?
-      @post.parking = posting["annotations"]["street_parking"] if posting["annotations"]["street_parking"].present?
-      # Save Post
-      @post.save
+      # Submit request
+      result = JSON.parse(open(uri).read)
 
-      # Loop over images
-      posting["images"].each do |image|
-        @image = Image.new
-        @image.url = image["full"]
-        @image.post_id = @post.id 
-        @image.save
-      end 
+      result["postings"].each do |posting|
+        # Create new Post
+        @post = Post.new
+        @post.heading = posting["heading"]
+        @post.body = posting["body"]
+        @post.price = posting["price"]
+        @post.neighborhood = Location.find_by(code: posting["location"]["locality"]).try(:name)
+        @post.external_url = posting["external_url"]
+        @post.timestamp = posting["timestamp"]
+        @post.bedrooms = posting["annotations"]["bedrooms"] if posting["annotations"]["bedrooms"].present?
+        @post.bathrooms = posting["annotations"]["bathrooms"] if posting["annotations"]["bathrooms"].present?
+        @post.sqft = posting["annotations"]["sqft"] if posting["annotations"]["sqft"].present?
+        @post.parking = posting["annotations"]["street_parking"] if posting["annotations"]["street_parking"].present?
+        # Save Post
+        @post.save
+
+        # Loop over images
+        posting["images"].each do |image|
+          @image = Image.new
+          @image.url = image["full"]
+          @image.post_id = @post.id 
+          @image.save
+        end 
+      end
+
+      Anchor.first.update(value: result["anchor"])
+      break if result["postings"].empty?
     end
   end
 
@@ -81,6 +88,15 @@ namespace :scraper do
       @location.code = location["code"]
       @location.name = location["short_name"]
       @location.save
+    end
+  end
+
+  desc "Discard old data"
+  task discard_old_data: :environment do
+    Post.all.each do |post|
+      if post.created_at < 6.hours.ago
+        post.destroy
+      end
     end
   end
 
